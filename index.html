@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Travel SIM Sales Dashboard</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="logo">
+          <i class="fa-solid fa-sim-card logo-icon"></i>
+          <span class="logo-text">TravelSIM<span class="logo-accent">Hub</span></span>
+        </div>
+      </div>
+      <nav class="sidebar-nav">
+        <button class="nav-item active" data-section="dashboard">
+          <i class="fa-solid fa-chart-pie"></i>
+          <span>Dashboard</span>
+        </button>
+        <button class="nav-item" data-section="orders">
+          <i class="fa-solid fa-cart-shopping"></i>
+          <span>Orders</span>
+        </button>
+        <button class="nav-item" data-section="products">
+          <i class="fa-solid fa-box-archive"></i>
+          <span>Products</span>
+        </button>
+        <button class="nav-item" data-section="users">
+          <i class="fa-solid fa-users"></i>
+          <span>Users</span>
+        </button>
+        <button class="nav-item" data-section="destinations">
+          <i class="fa-solid fa-earth-americas"></i>
+          <span>Destinations</span>
+        </button>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="status-indicator">
+          <span class="pulse-dot" id="api-status-dot"></span>
+          <span id="api-status-text">Connecting REST API...</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <!-- Top Bar -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <h1 id="page-title">Dashboard Overview</h1>
+        </div>
+        <div class="topbar-right">
+          <div class="search-box">
+            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+            <input type="text" id="global-search" placeholder="Search orders, users, products...">
+          </div>
+          <button class="btn btn-secondary" id="refresh-btn" title="Refresh Data">
+            <i class="fa-solid fa-rotate-right"></i>
+            <span>Refresh</span>
+          </button>
+          <button class="btn btn-primary" id="export-csv-btn" title="Export CSV">
+            <i class="fa-solid fa-file-export"></i>
+            <span>Export CSV</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- API Key Alert Modal / Notification -->
+      <div id="key-warning-banner" class="alert-banner hidden">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <span>Supabase Key is set to placeholder. Please update <code>SUPABASE_KEY</code> in <code>script.js</code> with your publishable key.</span>
+      </div>
+
+      <div class="content-body">
+        <!-- Dashboard Section -->
+        <section id="dashboard-section" class="view-section active">
+          <!-- Stat Cards -->
+          <div class="cards-grid">
+            <div class="stat-card">
+              <div class="card-icon revenue">
+                <i class="fa-solid fa-sack-dollar"></i>
+              </div>
+              <div class="card-info">
+                <span class="card-title">Total Revenue</span>
+                <h2 id="total-revenue" class="card-value">$0.00</h2>
+                <span class="card-subtext"><i class="fa-solid fa-arrow-trend-up"></i> Calculated from orders</span>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="card-icon orders">
+                <i class="fa-solid fa-bag-shopping"></i>
+              </div>
+              <div class="card-info">
+                <span class="card-title">Total Orders</span>
+                <h2 id="total-orders" class="card-value">0</h2>
+                <span class="card-subtext"><i class="fa-solid fa-clock-history"></i> Completed transactions</span>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="card-icon users">
+                <i class="fa-solid fa-user-group"></i>
+              </div>
+              <div class="card-info">
+                <span class="card-title">Total Users</span>
+                <h2 id="total-users" class="card-value">0</h2>
+                <span class="card-subtext"><i class="fa-solid fa-user-check"></i> Registered accounts</span>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="card-icon products">
+                <i class="fa-solid fa-wifi"></i>
+              </div>
+              <div class="card-info">
+                <span class="card-title">Total Products</span>
+                <h2 id="total-products" class="card-value">0</h2>
+                <span class="card-subtext"><i class="fa-solid fa-globe"></i> Active eSIM plans</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Charts Grid -->
+          <div class="charts-grid">
+            <div class="chart-card wide">
+              <div class="chart-header">
+                <h3>Revenue Overview</h3>
+                <span class="chart-subtitle">Revenue trend over time</span>
+              </div>
+              <div class="chart-container">
+                <canvas id="revenueLineChart"></canvas>
+              </div>
+            </div>
+            <div class="chart-card">
+              <div class="chart-header">
+                <h3>Orders Volume</h3>
+                <span class="chart-subtitle">Orders per date</span>
+              </div>
+              <div class="chart-container">
+                <canvas id="ordersBarChart"></canvas>
+              </div>
+            </div>
+            <div class="chart-card">
+              <div class="chart-header">
+                <h3>Product Share</h3>
+                <span class="chart-subtitle">Revenue by product</span>
+              </div>
+              <div class="chart-container">
+                <canvas id="productPieChart"></canvas>
+              </div>
+            </div>
+            <div class="chart-card">
+              <div class="chart-header">
+                <h3>Destinations Distribution</h3>
+                <span class="chart-subtitle">Destinations by type</span>
+              </div>
+              <div class="chart-container">
+                <canvas id="destinationDoughnutChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Orders Section -->
+        <section id="orders-section" class="view-section">
+          <div class="table-card">
+            <div class="table-header">
+              <h3><i class="fa-solid fa-cart-shopping"></i> Orders Directory</h3>
+              <span class="badge" id="orders-count-badge">0 Records</span>
+            </div>
+            <div class="table-wrapper">
+              <table class="data-table" id="orders-table">
+                <thead>
+                  <tr>
+                    <th>Order No</th>
+                    <th>Date & Time</th>
+                    <th>User Name</th>
+                    <th>Product Name</th>
+                    <th>Amount</th>
+                    <th>Discount</th>
+                    <th>Created By</th>
+                  </tr>
+                </thead>
+                <tbody id="orders-tbody">
+                  <tr><td colspan="7" class="loading-cell">Loading orders data...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- Products Section -->
+        <section id="products-section" class="view-section">
+          <div class="table-card">
+            <div class="table-header">
+              <h3><i class="fa-solid fa-box-archive"></i> Products Catalog</h3>
+              <span class="badge" id="products-count-badge">0 Records</span>
+            </div>
+            <div class="table-wrapper">
+              <table class="data-table" id="products-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Product Name</th>
+                    <th>Data Limit</th>
+                    <th>SIM Mode</th>
+                    <th>Amount</th>
+                    <th>Validity</th>
+                    <th>FUP Limit</th>
+                    <th>Post FUP Speed</th>
+                    <th>Operator ID</th>
+                    <th>Coverage</th>
+                  </tr>
+                </thead>
+                <tbody id="products-tbody">
+                  <tr><td colspan="10" class="loading-cell">Loading products data...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- Users Section -->
+        <section id="users-section" class="view-section">
+          <div class="table-card">
+            <div class="table-header">
+              <h3><i class="fa-solid fa-users"></i> Registered Users</h3>
+              <span class="badge" id="users-count-badge">0 Records</span>
+            </div>
+            <div class="table-wrapper">
+              <table class="data-table" id="users-table">
+                <thead>
+                  <tr>
+                    <th>User ID</th>
+                    <th>Name</th>
+                    <th>Country Code</th>
+                    <th>Mobile</th>
+                    <th>Role</th>
+                    <th>Created Date</th>
+                  </tr>
+                </thead>
+                <tbody id="users-tbody">
+                  <tr><td colspan="6" class="loading-cell">Loading users data...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- Destinations Section -->
+        <section id="destinations-section" class="view-section">
+          <div class="table-card">
+            <div class="table-header">
+              <h3><i class="fa-solid fa-earth-americas"></i> Coverage Destinations</h3>
+              <span class="badge" id="destinations-count-badge">0 Records</span>
+            </div>
+            <div class="table-wrapper">
+              <table class="data-table" id="destinations-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Destination Name</th>
+                    <th>Type</th>
+                    <th>Flag</th>
+                    <th>Status</th>
+                    <th>Included Destinations</th>
+                  </tr>
+                </thead>
+                <tbody id="destinations-tbody">
+                  <tr><td colspan="6" class="loading-cell">Loading destinations data...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
