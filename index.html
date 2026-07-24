@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Voyx Admin | Travel SIM Sales Dashboard</title>
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-layout">
+    <!-- Top Header Navigation -->
+    <header class="navbar">
+      <div class="navbar-left">
+        <div class="brand-logo">
+          <span class="logo-v">V</span><span class="logo-text">oyx</span>
+        </div>
+      </div>
+
+      <div class="navbar-center">
+        <div class="date-pill" id="current-date-pill">
+          <i class="fa-regular fa-calendar"></i>
+          <span id="display-date">30 Jun 2026</span>
+        </div>
+
+        <nav class="nav-tabs">
+          <button class="tab-btn active" data-tab="dashboard">
+            <i class="fa-solid fa-gauge-high"></i> Dashboard
+          </button>
+          <button class="tab-btn" data-tab="orders">
+            <i class="fa-solid fa-cart-shopping"></i> Orders
+          </button>
+          <button class="tab-btn" data-tab="products">
+            <i class="fa-solid fa-box-archive"></i> Products
+          </button>
+          <button class="tab-btn" data-tab="users">
+            <i class="fa-solid fa-users"></i> Users
+          </button>
+          <button class="tab-btn" data-tab="destinations">
+            <i class="fa-solid fa-earth-americas"></i> Destinations
+          </button>
+        </nav>
+      </div>
+
+      <div class="navbar-right">
+        <div class="search-wrap">
+          <i class="fa-solid fa-magnifying-glass search-ic"></i>
+          <input type="text" id="global-search" placeholder="Search orders, reps, destinations...">
+        </div>
+        <button class="btn btn-dark" id="download-csv-btn">
+          <i class="fa-solid fa-download"></i> Download CSV
+        </button>
+        <div class="user-profile">
+          <span class="user-name">Voyx Admin</span>
+          <button class="btn-logout" title="Logout"><i class="fa-solid fa-arrow-right-from-bracket"></i></button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Key Warning Banner -->
+    <div id="key-warning-banner" class="alert-banner hidden">
+      <i class="fa-solid fa-triangle-exclamation"></i>
+      <span>Supabase Key is set to placeholder. Update <code>SUPABASE_KEY</code> in <code>script.js</code> with your key.</span>
+    </div>
+
+    <!-- Main Container -->
+    <main class="main-container">
+      
+      <!-- DASHBOARD VIEW -->
+      <div id="dashboard-tab" class="tab-content active">
+        
+        <!-- Row 1: 4 Metric Cards -->
+        <div class="metrics-grid">
+          <!-- Card 1: Today Performance (Dark Theme) -->
+          <div class="metric-card dark-card">
+            <span class="card-label">TODAY PERFORMANCE</span>
+            <div class="card-metric-primary">
+              <span class="primary-number" id="today-orders">21</span>
+              <span class="primary-unit">Orders</span>
+            </div>
+            <div class="card-sub-metric">
+              <span class="sub-revenue" id="today-revenue">₹16.76K</span>
+              <span class="sub-label">Revenue</span>
+            </div>
+          </div>
+
+          <!-- Card 2: June MTD -->
+          <div class="metric-card light-card">
+            <div class="card-icon-top">
+              <i class="fa-solid fa-chart-column"></i>
+            </div>
+            <span class="card-label" id="mtd-label-heading">JUNE MTD</span>
+            <h2 class="card-big-number" id="mtd-orders">1024</h2>
+            <div class="card-sub-metric">
+              <span class="sub-revenue dark-rev" id="mtd-revenue">₹907.51K</span>
+              <span class="sub-label">Revenue</span>
+            </div>
+          </div>
+
+          <!-- Card 3: Prev Month Same Day -->
+          <div class="metric-card light-card">
+            <div class="card-icon-top">
+              <i class="fa-solid fa-clock-rotate-left"></i>
+            </div>
+            <span class="card-label">PREV MONTH (SAME DAY)</span>
+            <h2 class="card-big-number" id="prev-same-day-orders">921</h2>
+            <div class="card-sub-metric">
+              <span class="sub-revenue dark-rev" id="prev-same-day-revenue">₹777.31K</span>
+              <span class="sub-label">Revenue</span>
+            </div>
+          </div>
+
+          <!-- Card 4: Prev Month -->
+          <div class="metric-card light-card">
+            <div class="card-icon-top">
+              <i class="fa-solid fa-calendar-days"></i>
+            </div>
+            <span class="card-label">PREV MONTH</span>
+            <h2 class="card-big-number" id="prev-month-orders">964</h2>
+            <div class="card-sub-metric">
+              <span class="sub-revenue dark-rev" id="prev-month-revenue">₹818.90K</span>
+              <span class="sub-label">Revenue</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Row 2: Daily Leaderboard + Top Destinations -->
+        <div class="middle-grid">
+          <!-- Daily Leaderboard Table -->
+          <div class="panel-card leaderboard-panel">
+            <div class="panel-header">
+              <h3><i class="fa-solid fa-list-ol"></i> DAILY LEADERBOARD</h3>
+            </div>
+            <div class="table-responsive">
+              <table class="voyx-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>SALES_R</th>
+                    <th>#DAY</th>
+                    <th>#MTD</th>
+                    <th>MTD REV</th>
+                    <th>ARPU</th>
+                    <th>TARGET</th>
+                    <th>#PV_MONTH</th>
+                  </tr>
+                </thead>
+                <tbody id="leaderboard-tbody">
+                  <tr><td colspan="8" class="loading-td">Loading leaderboard data...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Top Destinations Dark Container -->
+          <div class="panel-card dark-panel top-destinations-panel">
+            <div class="panel-header dark-header">
+              <h3><i class="fa-solid fa-globe"></i> TOP DESTINATIONS</h3>
+            </div>
+            <ul class="destinations-list" id="top-destinations-list">
+              <li class="loading-td">Loading destinations...</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Row 3: Daily Summary & Monthly Summary Charts -->
+        <div class="charts-row">
+          <!-- Daily Summary Line Chart -->
+          <div class="panel-card chart-panel">
+            <div class="panel-header">
+              <h3><i class="fa-solid fa-chart-line"></i> DAILY SUMMARY</h3>
+            </div>
+            <div class="chart-box">
+              <canvas id="dailySummaryChart"></canvas>
+            </div>
+          </div>
+
+          <!-- Monthly Summary Cumulative Chart -->
+          <div class="panel-card chart-panel">
+            <div class="panel-header">
+              <h3><i class="fa-solid fa-chart-area"></i> MONTHLY SUMMARY</h3>
+            </div>
+            <div class="chart-box">
+              <canvas id="monthlySummaryChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ORDERS TAB -->
+      <div id="orders-tab" class="tab-content">
+        <div class="panel-card">
+          <div class="panel-header flex-between">
+            <h3><i class="fa-solid fa-cart-shopping"></i> Orders Directory</h3>
+            <span class="count-badge" id="orders-count">0 Orders</span>
+          </div>
+          <div class="table-responsive">
+            <table class="voyx-table">
+              <thead>
+                <tr>
+                  <th>Order No</th>
+                  <th>Date & Time</th>
+                  <th>User Name</th>
+                  <th>Product Name</th>
+                  <th>Amount</th>
+                  <th>Discount</th>
+                  <th>Created By</th>
+                </tr>
+              </thead>
+              <tbody id="orders-tbody">
+                <tr><td colspan="7" class="loading-td">Loading orders...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- PRODUCTS TAB -->
+      <div id="products-tab" class="tab-content">
+        <div class="panel-card">
+          <div class="panel-header flex-between">
+            <h3><i class="fa-solid fa-box-archive"></i> Products Catalog</h3>
+            <span class="count-badge" id="products-count">0 Products</span>
+          </div>
+          <div class="table-responsive">
+            <table class="voyx-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Product Name</th>
+                  <th>Data Limit</th>
+                  <th>SIM Mode</th>
+                  <th>Amount</th>
+                  <th>Validity</th>
+                  <th>FUP Limit</th>
+                  <th>Post FUP Speed</th>
+                  <th>Coverage</th>
+                </tr>
+              </thead>
+              <tbody id="products-tbody">
+                <tr><td colspan="9" class="loading-td">Loading products...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- USERS TAB -->
+      <div id="users-tab" class="tab-content">
+        <div class="panel-card">
+          <div class="panel-header flex-between">
+            <h3><i class="fa-solid fa-users"></i> Users Directory</h3>
+            <span class="count-badge" id="users-count">0 Users</span>
+          </div>
+          <div class="table-responsive">
+            <table class="voyx-table">
+              <thead>
+                <tr>
+                  <th>User ID</th>
+                  <th>Name</th>
+                  <th>Country Code</th>
+                  <th>Mobile</th>
+                  <th>Role</th>
+                  <th>Created Date</th>
+                </tr>
+              </thead>
+              <tbody id="users-tbody">
+                <tr><td colspan="6" class="loading-td">Loading users...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- DESTINATIONS TAB -->
+      <div id="destinations-tab" class="tab-content">
+        <div class="panel-card">
+          <div class="panel-header flex-between">
+            <h3><i class="fa-solid fa-earth-americas"></i> Coverage Destinations</h3>
+            <span class="count-badge" id="destinations-count">0 Destinations</span>
+          </div>
+          <div class="table-responsive">
+            <table class="voyx-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Destination Name</th>
+                  <th>Type</th>
+                  <th>Flag</th>
+                  <th>Status</th>
+                  <th>Included Destinations</th>
+                </tr>
+              </thead>
+              <tbody id="destinations-tbody">
+                <tr><td colspan="6" class="loading-td">Loading destinations...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
